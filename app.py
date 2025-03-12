@@ -19,7 +19,7 @@ class Person(StructuredNode):
     knows = RelationshipTo('Person', 'KNOWS')
 
 class Work(StructuredNode):
-    name = StringProperty(unique_index=True)
+    name = StringProperty(unique_index=True)    
     work = RelationshipTo('Work', 'WORK')
 
 @app.route('/')
@@ -55,7 +55,7 @@ def add_person():
 @app.route('/edit-person/<string:node_id>', methods=['GET', 'POST'])
 def edit_person(node_id):     
     with driver.session(database='neo4j') as sessions:
-        result = sessions.run("MATCH (n:Person) WHERE elementId(n) = $id RETURN elementId(n) as id, n.name as name", id=node_id)
+        result = sessions.run("MATCH (n:Person) WHERE elementId(n) = $id RETURN elementId(n) as id, n.name as name, n.age as age", id=node_id)
         record = result.single()
 
     if not record:
@@ -63,17 +63,20 @@ def edit_person(node_id):
 
     person = {
         'id': record['id'],
-        'name': record['name']
+        'name': record['name'],
+        'age': record['age']
     }
 
     if request.method == 'POST':
         new_name = request.form.get('new_name', '').strip()
+        new_age = request.form.get('new_age', '').strip()
         if new_name and new_name != person['name']:
             with driver.session(database='neo4j') as sessions:
                 sessions.run(
-                    "MATCH (n:Person) WHERE elementId(n) = $id SET n.name = $new_name",
+                    "MATCH (n:Person) WHERE elementId(n) = $id SET n.name = $new_name, n.age = $new_age",
                     id=node_id,
-                    new_name=new_name
+                    new_name=new_name,
+                    new_age=new_age
                 )
             print(f'Person updated successfully')
             return redirect(url_for('index'))
