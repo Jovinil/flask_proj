@@ -50,68 +50,35 @@
                     <h2 class="card-title">People</h2>
                 </header>
                 <div class="card-body">
-                    <form action="{{ url_for('delete_person') }}" method="POST">
-                        <table class="table">
-                            <thead>
-                                <th class="col-6">id</th>
-                                <th>name</th>
-                                <th>age</th>
-                                <th>controls</th>
-                            </thead>
-                            <tbody>
-                                {% for person in people %}
-                                <tr>
-                                    <td>{{ person.id }}</td>
-                                    <td> {{ person.name }} </td>
-                                    <td> {{ person.age }} </td>
-                                    <td>
-                                        <button type="button" class="btn btn-success" onclick="populateForm('{{ person.id }}', '{{ person.name }}')">Edit</button>
-                                        <button class="btn btn-danger" name="node_id" value="{{ person.id }}">Delete</button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </form>
+                    <table class="table">
+                        <thead>
+                            <th class="col-6">id</th>
+                            <th>name</th>
+                            <th>age</th>
+                            <th>controls</th>
+                        </thead>
+                        <tbody>
+                            {% for person in people %}
+                            <tr>
+                                <td>{{ person.index }}</td>
+                                <td> {{ person.name }} </td>
+                                <td> {{ person.age }} </td>
+                                <td>
+                                    <a href="{{ url_for('edit_person', node_id=person.id) }}" class="btn btn-success">Edit</a>                                   
+                                    <form action="{{ url_for('delete_person', node_id=person.id) }}" method="POST">
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </div>
     </div>
 
-    <div class="d-none" id="update-container">
-        <div class="col">
-            <section class="card">
-                <header class="card-header">
-                    <div class="card-actions">
-                        <a href="#" class="card-action card-action-toggle" data-card-toggle=""></a>
-                        <a href="#" class="card-action card-action-dismiss" data-card-dismiss=""></a>
-                    </div>
-
-                    <h2 class="card-title">Update Person</h2>
-                </header>
-                <div class="card-body">
-                    <form action="{{ url_for('update_person') }}" method="POST">
-                        <div class="row mb-3">
-                            <div class="col-lg-6" class="form-control" hidden>
-                                <input type="text" placeholder="Old Name" class="form-control" name="old_name_id" id="old_name_id">
-                            </div>
-                            <div class="col-lg-6" class="form-control">
-                                <input type="text" placeholder="Old Name" class="form-control" name="old_person_name_display" id="old_person_name_display" readonly>
-                            </div>
-                            <div class="col-lg-6" class="form-control">
-                                <input type="text" placeholder="Current Name" class="form-control" name="current_person_name" id="current_person_name">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <button class="btn btn-primary" type="submit">Submit</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </section>
-        </div>
-    </div>
+   
 
     <div class="row">
         <div class="col">

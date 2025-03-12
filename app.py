@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from neomodel import StructuredNode, StringProperty, IntegerProperty, RelationshipTo, RelationshipFrom, config
 from neo4j import GraphDatabase
+from flask_paginate import Pagination, get_page_args
 
 app = Flask(__name__)
 
@@ -23,11 +24,18 @@ class Work(StructuredNode):
 
 @app.route('/')
 def index():
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+    per_page = 10
+     
     with driver.session(database='neo4j') as sessions:
-        result = sessions.run("MATCH (n:Person) RETURN ID(n) as id, n.name AS name, n.age AS age")
-        people = [{'id': record['id'] ,'name': record['name'], 'age': record['age']} for record in result]
+        result = sessions.run("MATCH (n:Person) RETURN elementId(n) as id, ID(n) as index, n.name AS name, n.age AS age")
+        people = [{'id': record['id'], 'index': record['index'] ,'name': record['name'], 'age': record['age']} for record in result]
 
-        return render_template('testing.html', people=people)
+        total_result = sessions.run("MATCH (n:Person) RETURN count(n) AS total")
+        total = total_result.single()['total']
+    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap5')
+
+    return render_template('testing.html', people=people, pagination=pagination)
     
 @app.route('/add-person', methods=['POST'])
 def add_person():
@@ -44,24 +52,45 @@ def add_person():
         print(f'Person {person.name} already exists')
     return redirect(url_for('index'))
 
-@app.route('/update-person', methods=['POST'])
-def update_person():
-    old_name_id = request.form.get('old_name_id')
-    current_name = request.form.get('current_person_name', '').strip()
-# update needs to be fixed as to update base on the id instead of name
-    if old_name_id and current_name:
-       with driver.session() as session:
-            query = "MATCH (n) WHERE id(n) = $id DELETE n"
-            session.run(query, id=int(old_name_id))
+@app.route('/edit-person/<string:node_id>', methods=['GET', 'POST'])
+def edit_person(node_id):     
+    with driver.session(database='neo4j') as sessions:
+        result = sessions.run("MATCH (n:Person) WHERE elementId(n) = $id RETURN elementId(n) as id, n.name as name", id=node_id)
+        record = result.single()
 
-    return redirect(url_for('index'))
+    if not record:
+        return "Person not found", 404
 
-@app.route('/delete-person', methods=['POST'])
-def delete_person():
-    node_id = request.form.get('node_id')
+    person = {
+        'id': record['id'],
+        'name': record['name']
+    }
+
+    if request.method == 'POST':
+        new_name = request.form.get('new_name', '').strip()
+        if new_name and new_name != person['name']:
+            with driver.session(database='neo4j') as sessions:
+                sessions.run(
+                    "MATCH (n:Person) WHERE elementId(n) = $id SET n.name = $new_name",
+                    id=node_id,
+                    new_name=new_name
+                )
+            print(f'Person updated successfully')
+            return redirect(url_for('index'))
+
+    return render_template('edit.html', person=person)
+
+
+@app.route('/delete-person/<string:node_id>', methods=['POST'])
+def delete_person(node_id):
     with driver.session() as session:
-        query = "MATCH (n) WHERE id(n) = $id DELETE n"
-        session.run(query, id=int(node_id))
+        query = """
+        MATCH (n:Person) 
+        WHERE elementId(n) = $id 
+        DETACH DELETE n
+        """
+        session.run(query, id=node_id)
+        print(f'Person {node_id} has been successfully deleted.')
 
     return redirect(url_for('index'))
 

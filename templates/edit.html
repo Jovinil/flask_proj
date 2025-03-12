@@ -1,0 +1,19 @@
+{% extends "forms-basic.html" %}
+
+{% block title %} PDS {% endblock %}
+
+{% block form %}
+
+<div class="container mt-5">
+    <h1>Edit Person</h1>
+    <form action="{{ url_for('edit_person', node_id=person.id) }}" method="POST">
+        <div class="mb-3">
+            <label for="new_name" class="form-label">New Name</label>
+            <input type="text" class="form-control" id="new_name" name="new_name" value="{{ person.name }}" required>
+        </div>
+        <button type="submit" class="btn btn-success">Save Changes</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+{% endblock %}
